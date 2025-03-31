@@ -31,6 +31,8 @@ void GridVisualizer::saveToImage(const std::string& filename) {
                 cv::rectangle(image, cell, cv::Scalar(0, 0, 0), cv::FILLED);  // Obstacle = black
             } else if (grid_[y][x] == 2) {
                 cv::rectangle(image, cell, cv::Scalar(0, 0, 255), cv::FILLED);  // Path = red
+            } else if (grid_[y][x] == 3) {
+                cv::rectangle(image, cell, cv::Scalar(200, 200, 200), cv::FILLED); // light gray or white dots
             }
         }
     }
@@ -47,4 +49,12 @@ void GridVisualizer::saveToImage(const std::string& filename) {
     }
 
     cv::imwrite(filename, image);
+}
+
+void GridVisualizer::overlayNodes(const std::vector<std::pair<int, int>>& nodes) {
+    for (const auto& [x, y] : nodes) {
+        if (y >= 0 && y < grid_.size() && x >= 0 && x < grid_[0].size()) {
+            grid_[y][x] = 3; // new marker for sampled PRM nodes
+        }
+    }
 }

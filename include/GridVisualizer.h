@@ -12,6 +12,8 @@ public:
     void setStartGoal(std::pair<int, int> start, std::pair<int, int> goal);
     void saveToImage(const std::string& filename);
 
+    void overlayNodes(const std::vector<std::pair<int, int>>& nodes);
+
 private:
     Grid grid_;
     std::pair<int, int> start_;
