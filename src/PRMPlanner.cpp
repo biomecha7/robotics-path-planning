@@ -34,3 +34,33 @@ void PRMPlanner::sampleFreePoints() {
 const std::vector<std::pair<int, int>>& PRMPlanner::getSampledNodes() const {
     return nodes_;
 }
+
+double PRMPlanner::euclidean(const std::pair<int, int>& a, const std::pair<int, int>& b) {
+    int dx = a.first - b.first;
+    int dy = a.second - b.second;
+    return std::sqrt(dx * dx + dy * dy);
+}
+
+// Reused from A*
+bool PRMPlanner::isCollisionFree(const std::pair<int, int>& p1, const std::pair<int, int>& p2) {
+    int x0 = p1.first, y0 = p1.second;
+    int x1 = p2.first, y1 = p2.second;
+
+    int dx = std::abs(x1 - x0);
+    int dy = std::abs(y1 - y0);
+
+    int sx = (x0 < x1) ? 1 : -1;
+    int sy = (y0 < y1) ? 1 : -1;
+    int err = dx - dy;
+
+    while (true) {
+        if (x0 < 0 || x0 >= cols_ || y0 < 0 || y0 >= rows_) return false;
+        if (grid_[y0][x0] == 1) return false;
+        if (x0 == x1 && y0 == y1) break;
+        int e2 = 2 * err;
+        if (e2 > -dy) { err -= dy; x0 += sx; }
+        if (e2 < dx) { err += dx; y0 += sy; }
+    }
+
+    return true;
+}
