@@ -30,3 +30,7 @@ void PRMPlanner::sampleFreePoints() {
         }
     }
 }
+
+const std::vector<std::pair<int, int>>& PRMPlanner::getSampledNodes() const {
+    return nodes_;
+}
