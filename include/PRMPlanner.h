@@ -7,6 +7,13 @@
 
 using Grid = std::vector<std::vector<int>>;
 
+// Hash function for pair<int, int> keys
+struct pair_hash {
+    size_t operator()(const std::pair<int, int>& p) const {
+        return std::hash<int>()(p.first) ^ std::hash<int>()(p.second << 1);
+    }
+};
+
 class PRMPlanner {
 public:
     PRMPlanner(const Grid& grid, int numSamples, int numNeighbors);
@@ -27,4 +34,10 @@ private:
     int numNeighbors_;
 
     std::vector<std::pair<int, int>> nodes_;    // sampled free points
+
+    std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> edges_;
+    std::unordered_map<std::pair<int, int>, std::vector<std::pair<std::pair<int, int>, double>>, pair_hash> adj_;
+
+    double euclidean(const std::pair<int, int>& a, const std::pair<int, int>& b);
+    bool isCollisionFree(const std::pair<int, int>& p1, const std::pair<int, int>& p2);
 };
