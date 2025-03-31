@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <random>
+#include <queue>
 
 PRMPlanner::PRMPlanner(const Grid& grid, int numSamples, int numNeighbors)
     : grid_(grid), rows_(grid.size()), cols_(grid[0].size()), 
@@ -92,4 +93,77 @@ void PRMPlanner::buildRoadmap() {
 
 const std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>>& PRMPlanner::getEdges() const {
     return edges_;
+}
+
+std::vector<std::pair<int, int>> PRMPlanner::findPath(
+    std::pair<int, int> start,
+    std::pair<int, int> goal
+) {
+    // 1. Add start and goal to graph
+    nodes_.push_back(start);
+    nodes_.push_back(goal);
+
+    // 2. Connect them like any other node
+    auto connectNode = [&](const std::pair<int, int>& node) {
+        std::vector<std::pair<double, std::pair<int, int>>> dists;
+        for (const auto& other : nodes_) {
+            if (node == other) continue;
+            double dist = euclidean(node, other);
+            dists.emplace_back(dist, other);
+        }
+        std::sort(dists.begin(), dists.end());
+
+        int connections = 0;
+        for (const auto& [dist, neighbor] : dists) {
+            if (connections >= numNeighbors_) break;
+            if (isCollisionFree(node, neighbor)) {
+                edges_.emplace_back(node, neighbor);
+                adj_[node].emplace_back(neighbor, dist);
+                adj_[neighbor].emplace_back(node, dist);
+                ++connections;
+            }
+        }
+    };
+
+    connectNode(start);
+    connectNode(goal);
+
+    // 3. Dijkstra's search
+    std::unordered_map<std::pair<int, int>, double, pair_hash> costSoFar;
+    std::unordered_map<std::pair<int, int>, std::pair<int, int>, pair_hash> cameFrom;
+    using PQElem = std::pair<double, std::pair<int, int>>;
+    std::priority_queue<PQElem, std::vector<PQElem>, std::greater<>> frontier;
+
+    frontier.push({0.0, start});
+    costSoFar[start] = 0.0;
+
+    while (!frontier.empty()) {
+        auto [cost, current] = frontier.top();
+        frontier.pop();
+
+        if (current == goal) break;
+
+        for (const auto& [neighbor, edgeCost] : adj_[current]) {
+            double newCost = costSoFar[current] + edgeCost;
+            if (costSoFar.find(neighbor) == costSoFar.end() || newCost < costSoFar[neighbor]) {
+                costSoFar[neighbor] = newCost;
+                frontier.push({newCost, neighbor});
+                cameFrom[neighbor] = current;
+            }
+        }
+    }
+
+    // 4. Reconstruct path
+    std::vector<std::pair<int, int>> path;
+    std::pair<int, int> current = goal;
+    if (cameFrom.find(goal) == cameFrom.end()) return {}; // no path
+
+    while (current != start) {
+        path.push_back(current);
+        current = cameFrom[current];
+    }
+
+    path.push_back(start);
+    std::reverse(path.begin(), path.end());
+    return path;
 }
