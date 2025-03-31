@@ -9,14 +9,16 @@ constexpr double ROBOT_RADIUS = 2.0;
 
 int main(int argc, char* argv[]) {
     if (argc != 5) {
-        std::cerr << "Usage: " << argv[0] << "<start_x> <start_y> <goal_x> <goal_y>\n";
+        std::cerr << "Usage: " << argv[0] << " <start_x> <start_y> <goal_x> <goal_y>\n";
         return 1;
     }
 
     std::pair<int, int> start = {std::stoi(argv[1]), std::stoi(argv[2])};
-    std::pair<int, int> goal = {std::stoi(argv[3]), std::stoi(argv[4])};
+    std::pair<int, int> goal  = {std::stoi(argv[3]), std::stoi(argv[4])};
 
-    // 1. Build Configuration Space
+    // ----------------------------
+    // 1. Configuration Space
+    // ----------------------------
     CSpaceBuilder cspace(GRID_SIZE, ROBOT_RADIUS);
 
     cspace.addObstacle({20, 20, 30, 30});
@@ -26,56 +28,67 @@ int main(int argc, char* argv[]) {
     cspace.buildConfigurationSpace();
     Grid grid = cspace.getGrid();
 
-    // 2. A* Path Planning 
+    // ----------------------------
+    // 2. A* Planning + Animation
+    // ----------------------------
     AStarPlanner planner(grid);
-
     auto path = planner.search(start, goal);
 
     if (path.empty()) {
-        std::cout << "No path found.\n";
+        std::cout << "A* path not found.\n";
     } else {
-        std::cout << "Path found with " << path.size() << " waypoints.\n";
-        for (const auto& [x, y] : path) {
-            std::cout << "(" << x << ", " << y << ") ";
+        std::cout << "A* path found with " << path.size() << " waypoints.\n";
+
+        for (size_t i = 1; i <= path.size(); ++i) {
+            GridVisualizer frameVisualizer(grid);
+            frameVisualizer.setStartGoal(start, goal);
+            frameVisualizer.overlayPath({path.begin(), path.begin() + i});
+            frameVisualizer.saveToImage("img/frame_" + std::to_string(i) + ".png");
         }
-        std::cout << '\n';
+
+        GridVisualizer finalVisualizer(grid);
+        finalVisualizer.setStartGoal(start, goal);
+        finalVisualizer.overlayPath(path);
+        finalVisualizer.saveToImage("img/config_space_final.png");
     }
 
-    // 3. Animate Path Drawing Frame-by-Frame
-    for (size_t i = 1; i <= path.size(); ++i) {
-        GridVisualizer frameVisualizer(grid); // fresh copy of grid
-        frameVisualizer.setStartGoal(start, goal);
-        frameVisualizer.overlayPath(std::vector<std::pair<int, int>>(path.begin(), path.begin() + i));
-        frameVisualizer.saveToImage("img/frame_" + std::to_string(i) + ".png");
-    }
-
-    std::cout << "Saved animation frames in img/frame_#.png\n";
-
-    // Optional: save the final result too
-    GridVisualizer visualizer(grid);
-    visualizer.setStartGoal(start, goal);
-    visualizer.overlayPath(path);
-    visualizer.saveToImage("img/config_space_final.png");
-
-    // Probabilistic Roadmap Planner (PRM)
-    PRMPlanner prm(grid, 500, 100);
+    // ----------------------------
+    // 3. PRM Sampling Visualization
+    // ----------------------------
+    PRMPlanner prm(grid, 500, 10);  // Reduced K=10 to prevent over-connecting
     prm.sampleFreePoints();
 
-    visualizer.overlayNodes(prm.getSampledNodes());
-    visualizer.saveToImage("img/prm_samples.png");
+    GridVisualizer sampleVisualizer(grid);
+    sampleVisualizer.setStartGoal(start, goal);
+    sampleVisualizer.overlayNodes(prm.getSampledNodes());
+    sampleVisualizer.saveToImage("img/prm_samples.png");
 
-    std::cout << "Saved final image: img/config_space_final.png\n";
-    std::cout << "Saved final image: img/prm_samples.png\n";
+    // ----------------------------
+    // 4. PRM Roadmap Visualization
+    // ----------------------------
+    prm.buildRoadmap();
 
+    GridVisualizer roadmapVisualizer(grid);
+    roadmapVisualizer.setStartGoal(start, goal);
+    roadmapVisualizer.overlayNodes(prm.getSampledNodes());
+    roadmapVisualizer.overlayEdges(prm.getEdges());
+    roadmapVisualizer.saveToImage("img/prm_roadmap.png");
+
+    // ----------------------------
+    // 5. Auto-open images
+    // ----------------------------
     #ifdef __APPLE__
         system("open img/config_space_final.png");
         system("open img/prm_samples.png");
+        system("open img/prm_roadmap.png");
     #elif __linux__
         system("xdg-open img/config_space_final.png");
         system("xdg-open img/prm_samples.png");
+        system("xdg-open img/prm_roadmap.png");
     #elif _WIN32
         system("start img\\config_space_final.png");
-        system("start img/prm_samples.png");
+        system("start img\\prm_samples.png");
+        system("start img\\prm_roadmap.png");
     #endif
 
     return 0;
