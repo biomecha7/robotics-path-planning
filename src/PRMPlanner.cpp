@@ -64,3 +64,28 @@ bool PRMPlanner::isCollisionFree(const std::pair<int, int>& p1, const std::pair<
 
     return true;
 }
+
+void PRMPlanner::buildRoadmap() {
+    for (const auto& node : nodes_) {
+        // Find neighbors
+        std::vector<std::pair<double, std::pair<int, int>>> dists;
+        for (const auto& other : nodes_) {
+            if (node == other) continue;
+            double dist = euclidean(node, other);
+            dists.emplace_back(dist, other);
+        }
+
+        std::sort(dists.begin(), dists.end());
+
+        int connections = 0;
+        for (const auto& [dist, neighbor] : dists) {
+            if (connections >= numNeighbors_) break;
+            if (isCollisionFree(node, neighbor)) {
+                edges_.emplace_back(node, neighbor);
+                adj_[node].emplace_back(neighbor, dist);
+                adj_[neighbor].emplace_back(node, dist);
+                ++connections;
+            }
+        }
+    }
+}

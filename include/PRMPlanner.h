@@ -27,6 +27,8 @@ public:
 
     void sampleFreePoints();
 
+    void buildRoadmap();
+
 private:
     const Grid& grid_;
     int rows_, cols_;
