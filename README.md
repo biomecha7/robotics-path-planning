@@ -126,3 +126,126 @@ std::vector<std::pair<int, int>> aStarSearch(
 - You may use `std::priority_queue` with a custom comparator for the open set.
 
 ---
+
+Awesome — you're about to step into **sampling-based motion planning** with **PRM (Probabilistic Roadmap Method)**, which is foundational in real robotics, including arms, drones, and autonomous vehicles in off-road environments.
+
+---
+
+## 🚧 **Problem 4: Probabilistic Roadmap (PRM) Path Planning**
+
+---
+
+## 🚚 **Scenario**
+
+You’re programming a ground-based autonomous vehicle to navigate a 100x100 meter area with sparse, irregular obstacles. A traditional grid-based planner like A* is inefficient here. Instead, you'll use PRM:
+
+> "Sample valid configurations, connect them into a graph, and search that graph."
+
+---
+
+## 🎯 **Goals**
+1. Sample `N` valid points from the configuration space.
+2. Connect each point to its `K` nearest neighbors **only if** the straight-line path is collision-free.
+3. Add start and goal to the roadmap and connect them.
+4. Run Dijkstra or A* over this graph to find the path.
+5. Visualize:
+   - Sampled nodes
+   - Roadmap edges
+   - Final path
+
+---
+
+## 🛠️ Inputs
+
+- `Grid` from your `CSpaceBuilder`
+- Start and goal position `(x, y)` integers
+- Constants:
+  - `N = 500` nodes
+  - `K = 10` nearest neighbors
+
+---
+
+## 📤 Output
+
+- A vector of `(x, y)` points representing the path
+- Image:
+  - Obstacle map
+  - Roadmap edges (light gray)
+  - Path (red)
+  - Start (green), Goal (blue)
+
+---
+
+## 🔧 Class Structure (new file: `PRMPlanner.h/cpp`)
+
+```cpp
+class PRMPlanner {
+public:
+    PRMPlanner(const Grid& grid, int numSamples, int numNeighbors);
+
+    std::vector<std::pair<int, int>> findPath(
+        std::pair<int, int> start,
+        std::pair<int, int> goal
+    );
+
+    const std::vector<std::pair<int, int>>& getSampledNodes() const;
+    const std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>>& getEdges() const;
+
+private:
+    void sampleFreePoints();
+    void buildRoadmap();
+    void connectNode(const std::pair<int, int>& node);
+
+    bool isCollisionFree(const std::pair<int, int>& p1, const std::pair<int, int>& p2);
+    double euclidean(const std::pair<int, int>& a, const std::pair<int, int>& b);
+
+    const Grid& grid_;
+    int rows_, cols_;
+    int numSamples_;
+    int numNeighbors_;
+
+    std::vector<std::pair<int, int>> nodes_;  // sampled nodes
+    std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> edges_; // graph edges
+    std::unordered_map<std::pair<int, int>, std::vector<std::pair<int, double>>, pair_hash> adj_; // adjacency list
+};
+```
+
+> You'll reuse your **collision checker** from Problem 2.
+
+---
+
+## 🧠 Algorithm Summary
+
+1. **Sampling**:
+   - Pick `N` random (x, y) in the grid.
+   - If the grid cell is free → keep it.
+   - Store them in `nodes_`.
+
+2. **Graph construction**:
+   - For each node, find `K` nearest others (Euclidean).
+   - Connect with an edge **if straight line path is collision-free**.
+
+3. **Add start and goal**:
+   - Manually add these to the graph.
+   - Connect them to their `K` nearest neighbors as well.
+
+4. **Search**:
+   - Dijkstra’s or A* over the graph using `std::priority_queue`.
+
+5. **Visualize**:
+   - Gray lines for edges
+   - Red for path
+   - Green = start, Blue = goal
+
+---
+
+## 🗂️ File Plan
+
+| File                | Description                     |
+|---------------------|---------------------------------|
+| `PRMPlanner.h/cpp`  | PRM logic, graph building, search |
+| `main.cpp`          | Load C-space, run PRM, visualize |
+| `GridVisualizer`    | Extend to draw nodes + edges    |
+
+---
+
