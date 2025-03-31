@@ -16,6 +16,10 @@ public:
         std::pair<int, int> goal
     );
 
+    const std::vector<std::pair<int, int>>& getSampledNodes() const;
+
+    void sampleFreePoints();
+
 private:
     const Grid& grid_;
     int rows_, cols_;
