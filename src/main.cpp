@@ -1,6 +1,7 @@
 #include <iostream>
 #include "CSpaceBuilder.h"
 #include "AStarPlanner.h"
+#include "PRMPlanner.h"
 #include "GridVisualizer.h"
 
 constexpr int GRID_SIZE = 100;
@@ -56,16 +57,26 @@ int main(int argc, char* argv[]) {
     visualizer.overlayPath(path);
     visualizer.saveToImage("img/config_space_final.png");
 
+    // Probabilistic Roadmap Planner (PRM)
+    PRMPlanner prm(grid, 500, 100);
+    prm.sampleFreePoints();
+
+    visualizer.overlayNodes(prm.getSampledNodes());
+    visualizer.saveToImage("img/prm_samples.png");
+
     std::cout << "Saved final image: img/config_space_final.png\n";
+    std::cout << "Saved final image: img/prm_samples.png\n";
 
     #ifdef __APPLE__
         system("open img/config_space_final.png");
+        system("open img/prm_samples.png");
     #elif __linux__
         system("xdg-open img/config_space_final.png");
+        system("xdg-open img/prm_samples.png");
     #elif _WIN32
         system("start img\\config_space_final.png");
+        system("start img/prm_samples.png");
     #endif
-
 
     return 0;
 }
