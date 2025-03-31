@@ -48,6 +48,8 @@ void GridVisualizer::saveToImage(const std::string& filename) {
             cellSize, cv::Scalar(255, 0, 0), cv::FILLED);
     }
 
+    overlayEdges(edges_);
+
     cv::imwrite(filename, image_);
 }
 
@@ -60,6 +62,7 @@ void GridVisualizer::overlayNodes(const std::vector<std::pair<int, int>>& nodes)
 }
 
 void GridVisualizer::overlayEdges(const std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>>& edges) {
+    edges_ = edges;
     int cellSize = 5;
     for (const auto& [a, b] : edges) {
         cv::line(

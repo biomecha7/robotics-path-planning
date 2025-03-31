@@ -22,4 +22,6 @@ private:
     std::pair<int, int> goal_;
     bool hasStartGoal_ = false;
     cv::Mat image_;
+    std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> edges_;
+
 };
