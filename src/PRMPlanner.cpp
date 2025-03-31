@@ -89,3 +89,7 @@ void PRMPlanner::buildRoadmap() {
         }
     }
 }
+
+const std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>>& PRMPlanner::getEdges() const {
+    return edges_;
+}

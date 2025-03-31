@@ -29,6 +29,8 @@ public:
 
     void buildRoadmap();
 
+    const std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>>& getEdges() const;
+
 private:
     const Grid& grid_;
     int rows_, cols_;
