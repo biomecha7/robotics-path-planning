@@ -9,16 +9,17 @@ using Point = std::pair<int, int>;
 
 class RRTPlanner {
 public:
-    RRTPlanner(const Grid& grid, int maxIterations = 1000, double stepSize = 5.0);
-
-    std::vector<Point> plan(Point start, Point goal);
-
-private:
     struct Node {
         Point pos;
         int parentIdx;
     };
 
+    RRTPlanner(const Grid& grid, int maxIterations = 1000, double stepSize = 5.0);
+
+    std::vector<Point> plan(Point start, Point goal);
+
+    const std::vector<RRTPlanner::Node>& getTree() const { return tree_; }
+private:
     Grid grid_;
     int rows_, cols_;
     int maxIterations_;
