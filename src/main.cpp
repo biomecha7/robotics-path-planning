@@ -4,6 +4,7 @@
 #include "PRMPlanner.h"
 #include "GridVisualizer.h"
 #include "TrajectoryGenerator.h"
+#include "RRTPlanner.h"
 
 constexpr int GRID_SIZE = 100;
 constexpr double ROBOT_RADIUS = 2.0;
@@ -134,7 +135,36 @@ int main(int argc, char* argv[]) {
     visualizer.saveToImage("img/prm_smoothed_trajectory.png");
 
     // ----------------------------
-    // 8. Auto-open images
+    // 8. RRT Path Planning 
+    // ----------------------------
+    RRTPlanner rrt(grid, 2000, 7.0);
+    auto rrtPath = rrt.plan(start, goal);
+    std::cout << "RRT tree size: " << rrt.getTree().size() << '\n';
+
+    if (rrtPath.empty()) {
+        std::cout << "RRT path not found.\n";
+    } else {
+        std::cout << "RRT path found with " << rrtPath.size() << " steps.\n";
+    }
+
+    // Visualization
+    GridVisualizer rrtVisualizer(grid);
+    rrtVisualizer.setStartGoal(start, goal);
+    rrtVisualizer.overlayPath(rrtPath);
+
+    // Add tree edges to visualizer
+    std::vector<std::pair<Point, Point>> rrtEdges;
+    const auto& tree = rrt.getTree();
+    for (size_t i = 1; i < tree.size(); ++i) {
+        rrtEdges.emplace_back(tree[i].pos, tree[tree[i].parentIdx].pos);
+    }
+
+    rrtVisualizer.overlayEdges(rrtEdges);
+
+    rrtVisualizer.saveToImage("img/rrt_path.png");
+
+    // ----------------------------
+    // 9. Auto-open images
     // ----------------------------
     #ifdef __APPLE__
         system("open img/config_space_final.png");
@@ -143,6 +173,7 @@ int main(int argc, char* argv[]) {
         system("open img/prm_path.png");
         system("open img/prm_path_smoothed.png");
         system("open img/prm_smoothed_trajectory.png");
+        system("open img/rrt_path.png");
     #elif __linux__
         system("xdg-open img/config_space_final.png");
         system("xdg-open img/prm_samples.png");
