@@ -64,3 +64,28 @@ std::vector<Point> RRTPlanner::plan(Point start, Point goal) {
     // TODO: Loop and grow tree
     return {};
 }
+
+/**
+ * Moves from a node in the tree toward the sampled point, but only by a fixed stepSize_, not all the way.
+ *
+ * Concept:
+ *  - The sample point may be far away.
+ *  - We want to limit expansion per step to encourage gradual growth and maintain control.
+ *  - This mimics a robot moving forward with bounded velocity.
+ *
+ */
+Point RRTPlanner::steer(const Point& from, const Point& to) {
+    double dx = to.first - from.first;
+    double dy = to.second - from.second;
+    double dist = std::sqrt(dx * dx + dy * dy);
+
+    if (dist < stepSize_) {
+        return to;
+    }
+
+    double scale = stepSize_ / dist;
+    int newX = static_cast<int>(std::round(from.first + dx * scale));
+    int newY = static_cast<int>(std::round(from.second + dy * scale));
+
+    return {newX, newY};
+}
