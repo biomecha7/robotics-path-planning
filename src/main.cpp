@@ -107,25 +107,34 @@ int main(int argc, char* argv[]) {
     // ----------------------------
     // 7. Apply Catmull-Rom Spline
     // ----------------------------
-    std::vector<std::pair<double, double>> smoothedDoublePath(prmSmoothedPath.begin(), prmSmoothedPath.end());
-    // Pad the path by repeating endpoints
-    std::vector<std::pair<double, double>> padded;
-    padded.push_back(smoothedDoublePath.front());        // Duplicate first
-    padded.insert(padded.end(), smoothedDoublePath.begin(), smoothedDoublePath.end());
-    padded.push_back(smoothedDoublePath.back());         // Duplicate last
+    if (prmPath.empty()) {
+        std::cout << "PRM path not found.\n";
+        return 0;
+    }
 
-    auto splinePath = TrajectoryGenerator::generateCatmullRomSpline(padded, 10);
+    std::vector<TrajectoryGenerator::Point> prmPointPath;
+    for (const auto& [x, y] : prmPath) {
+        prmPointPath.emplace_back(static_cast<double>(x), static_cast<double>(y), 0.0);
+    }
 
-    // Draw spline
+    auto timedPath = TrajectoryGenerator::applyTimeProfile(prmPointPath, 1.0);
+    auto splinePath = TrajectoryGenerator::generateCatmullRomSpline(timedPath, 10);
+
     GridVisualizer visualizer(grid);
     visualizer.setStartGoal(start, goal);
-    visualizer.overlayPath(std::vector<std::pair<int, int>>(splinePath.begin(), splinePath.end()));
-    smoothVisualizer.overlayNodes(prm.getSampledNodes());
-    smoothVisualizer.overlayEdges(prm.getEdges());
-    visualizer.saveToImage("img/prm_path_curve.png");
+
+    std::vector<std::pair<int, int>> roundedSplinePath;
+    for (const auto& [x, y, t] : splinePath) {
+        roundedSplinePath.emplace_back(static_cast<int>(std::round(x)), static_cast<int>(std::round(y)));
+    }
+
+    visualizer.overlayPath(roundedSplinePath);
+    visualizer.overlayNodes(prm.getSampledNodes());
+    visualizer.overlayEdges(prm.getEdges());
+    visualizer.saveToImage("img/prm_smoothed_trajectory.png");
 
     // ----------------------------
-    // 7. Auto-open images
+    // 8. Auto-open images
     // ----------------------------
     #ifdef __APPLE__
         system("open img/config_space_final.png");
@@ -133,7 +142,7 @@ int main(int argc, char* argv[]) {
         system("open img/prm_roadmap.png");
         system("open img/prm_path.png");
         system("open img/prm_path_smoothed.png");
-        system("open img/prm_path_curve.png");
+        system("open img/prm_smoothed_trajectory.png");
     #elif __linux__
         system("xdg-open img/config_space_final.png");
         system("xdg-open img/prm_samples.png");
