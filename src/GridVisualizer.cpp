@@ -10,11 +10,7 @@ void GridVisualizer::setStartGoal(std::pair<int, int> start, std::pair<int, int>
 }
 
 void GridVisualizer::overlayPath(const std::vector<std::pair<int, int>>& path) {
-    for (const auto& [x, y] : path) {
-        if (y >= 0 && y < grid_.size() && x >= 0 && x < grid_[0].size()) {
-            grid_[y][x] = 2;  // Mark path cells with a special value
-        }
-    }
+    path_ = path;
 }
 
 void GridVisualizer::saveToImage(const std::string& filename) {
@@ -29,10 +25,10 @@ void GridVisualizer::saveToImage(const std::string& filename) {
             cv::Rect cell(x * cellSize, y * cellSize, cellSize, cellSize);
             if (grid_[y][x] == 1) {
                 cv::rectangle(image_, cell, cv::Scalar(0, 0, 0), cv::FILLED);  // Obstacle = black
-            } else if (grid_[y][x] == 2) {
+            }
+
+            if (grid_[y][x] == 2) {
                 cv::rectangle(image_, cell, cv::Scalar(0, 0, 255), cv::FILLED);  // Path = red
-            } else if (grid_[y][x] == 3) {
-                cv::rectangle(image_, cell, cv::Scalar(200, 200, 200), cv::FILLED); // light gray or white dots
             }
         }
     }
@@ -49,6 +45,26 @@ void GridVisualizer::saveToImage(const std::string& filename) {
     }
 
     overlayEdges(edges_);
+
+    // 2. Overlay the path on top of everything
+    for (const auto& [x, y] : path_) {
+        cv::circle(
+            image_,
+            cv::Point(x * cellSize + cellSize / 2, y * cellSize + cellSize / 2),
+            1, cv::Scalar(0, 0, 255), cv::FILLED
+        );
+    }
+
+    for (size_t i = 1; i < path_.size(); ++i) {
+        const auto& [x1, y1] = path_[i - 1];
+        const auto& [x2, y2] = path_[i];
+        cv::line(
+            image_,
+            cv::Point(x1 * cellSize + cellSize / 2, y1 * cellSize + cellSize / 2),
+            cv::Point(x2 * cellSize + cellSize / 2, y2 * cellSize + cellSize / 2),
+            cv::Scalar(0, 0, 255), 2
+        );
+    }
 
     cv::imwrite(filename, image_);
 }

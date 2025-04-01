@@ -23,5 +23,5 @@ private:
     bool hasStartGoal_ = false;
     cv::Mat image_;
     std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> edges_;
-
+    std::vector<std::pair<int, int>> path_;
 };
