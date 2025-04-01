@@ -3,6 +3,7 @@
 #include <random>
 #include <limits>
 #include <cstdlib>
+#include <iostream>
 
 RRTPlanner::RRTPlanner(const Grid& grid, int maxIterations, double stepSize) 
     : grid_(grid), rows_(grid.size()), cols_(grid[0].size()),
@@ -54,15 +55,69 @@ int RRTPlanner::getNearestNodeIndex(const Point& target) {
  *  1. Sample random point
  *  2. Find the nearest node in the tree
  *  3. Steer that node toward the sample
- *  4. If it's collision-free, add it to the free
+ *  4. If it's collision-free, add it to the tree
  *
+ *  Loop and Grow the Tree:
+ *  1. Loop up to maxIterations_
+ *  2. Sample random point
+ *  3. Find the nearest node in the tree
+ *  4. Steer toward the sample
+ *  5. Check collision
+ *  6. Add new node if valid
+ *  7. Check if goal is reached, we reconstruct the path.
+ *
+ *  Concept: Path Reconstruction
+ *      Each Node stores a parentIdx. To reconstruct the path:
+ *          - Start at goal
+ *          - Backtrack using parentIdx to build the path
  */
 std::vector<Point> RRTPlanner::plan(Point start, Point goal) {
     tree_.clear();
     tree_.push_back({start, -1});   // root node has no parent
 
-    // TODO: Loop and grow tree
-    return {};
+    for (int iter = 0; iter < maxIterations_; ++iter) {
+        Point randPoint = sample();
+        int nearestIdx = getNearestNodeIndex(randPoint);
+        if (nearestIdx == -1) {
+            std::cout << "No nearest node found\n";
+            continue;
+        }
+
+        Point nearest = tree_[nearestIdx].pos;
+        Point newPoint = steer(nearest, randPoint);
+
+        std::cout << "Iter " << iter 
+                  << ": sample=(" << randPoint.first << "," << randPoint.second << ") "
+                  << "nearest=(" << nearest.first << "," << nearest.second << ") "
+                  << "steered=(" << newPoint.first << "," << newPoint.second << ") ";
+
+        if (!isCollisionFree(nearest, newPoint)) {
+            std::cout << "⛔️ collision\n";
+            continue;
+        }
+
+        std::cout << "✅ free, adding node\n";
+        tree_.push_back({newPoint, nearestIdx});
+
+        if (distance(newPoint, goal) < stepSize_) {
+            // Connect goal
+            if (isCollisionFree(newPoint, goal)) {
+                tree_.push_back({goal, static_cast<int>(tree_.size() - 1)});
+
+                // Reconstruct path
+                std::vector<Point> path;
+                int idx = tree_.size() - 1;
+                while (idx != -1) {
+                    path.push_back(tree_[idx].pos);
+                    idx = tree_[idx].parentIdx;
+                }
+                std::reverse(path.begin(), path.end());
+                return path;
+            }
+        }
+    }
+
+    return {}; // Failed
 }
 
 /**
@@ -88,4 +143,9 @@ Point RRTPlanner::steer(const Point& from, const Point& to) {
     int newY = static_cast<int>(std::round(from.second + dy * scale));
 
     return {newX, newY};
+}
+
+bool RRTPlanner::isCollisionFree(const Point& from, const Point& to) {
+    // TODO: Implement Bresenham-based collision check
+    return true;
 }
