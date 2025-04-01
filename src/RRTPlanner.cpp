@@ -145,7 +145,32 @@ Point RRTPlanner::steer(const Point& from, const Point& to) {
     return {newX, newY};
 }
 
+/**
+ * Makes the planner real by implementing the collision checker using Bresenham's line algorithm.
+ * This ensures the edge from from->to lies in the free space (no obstacles in the grid).
+ *
+ * Concept: Bresenham's algorithm efficiently traces a line between two integer grid cells. We'll walk along that line and check for obstacles in the grid.
+ */
 bool RRTPlanner::isCollisionFree(const Point& from, const Point& to) {
-    // TODO: Implement Bresenham-based collision check
+
+    int x0 = from.first, y0 = from.second;
+    int x1 = to.first, y1 = to.second;
+
+    int dx = std::abs(x1 - x0);
+    int dy = std::abs(y1 - y0);
+    int sx = (x0 < x1) ? 1 : -1;
+    int sy = (y0 < y1) ? 1 : -1;
+    int err = dx - dy;
+
+    while (true) {
+        if (x0 < 0 || x0 >= cols_ || y0 < 0 || y0 >= rows_) return false;
+        if (grid_[y0][x0] == 1) return false; // obstacle
+
+        if (x0 == x1 && y0 == y1) break;
+        int e2 = 2 * err;
+        if (e2 > -dy) { err -= dy; x0 += sx; }
+        if (e2 < dx)  { err += dx; y0 += sy; }
+    }
+
     return true;
 }
