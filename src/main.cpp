@@ -3,6 +3,7 @@
 #include "AStarPlanner.h"
 #include "PRMPlanner.h"
 #include "GridVisualizer.h"
+#include "TrajectoryGenerator.h"
 
 constexpr int GRID_SIZE = 100;
 constexpr double ROBOT_RADIUS = 2.0;
@@ -104,6 +105,26 @@ int main(int argc, char* argv[]) {
     smoothVisualizer.saveToImage("img/prm_path_smoothed.png");
 
     // ----------------------------
+    // 7. Apply Catmull-Rom Spline
+    // ----------------------------
+    std::vector<std::pair<double, double>> smoothedDoublePath(prmSmoothedPath.begin(), prmSmoothedPath.end());
+    // Pad the path by repeating endpoints
+    std::vector<std::pair<double, double>> padded;
+    padded.push_back(smoothedDoublePath.front());        // Duplicate first
+    padded.insert(padded.end(), smoothedDoublePath.begin(), smoothedDoublePath.end());
+    padded.push_back(smoothedDoublePath.back());         // Duplicate last
+
+    auto splinePath = TrajectoryGenerator::generateCatmullRomSpline(padded, 10);
+
+    // Draw spline
+    GridVisualizer visualizer(grid);
+    visualizer.setStartGoal(start, goal);
+    visualizer.overlayPath(std::vector<std::pair<int, int>>(splinePath.begin(), splinePath.end()));
+    smoothVisualizer.overlayNodes(prm.getSampledNodes());
+    smoothVisualizer.overlayEdges(prm.getEdges());
+    visualizer.saveToImage("img/prm_path_curve.png");
+
+    // ----------------------------
     // 7. Auto-open images
     // ----------------------------
     #ifdef __APPLE__
@@ -112,6 +133,7 @@ int main(int argc, char* argv[]) {
         system("open img/prm_roadmap.png");
         system("open img/prm_path.png");
         system("open img/prm_path_smoothed.png");
+        system("open img/prm_path_curve.png");
     #elif __linux__
         system("xdg-open img/config_space_final.png");
         system("xdg-open img/prm_samples.png");
