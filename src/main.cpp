@@ -74,6 +74,23 @@ int main(int argc, char* argv[]) {
     roadmapVisualizer.overlayEdges(prm.getEdges());
     roadmapVisualizer.saveToImage("img/prm_roadmap.png");
 
+    // ---------------------------
+    // 5. PRM Final Path Visualization
+    // ---------------------------
+    auto prmPath = prm.findPath(start, goal);
+    if (prmPath.empty()) {
+        std::cout << "PRM path NOT found.\n";
+    } else {
+        std::cout << "PRM path FOUND with " << prmPath.size() << " steps.\n";
+    }
+
+    GridVisualizer prmResult(grid);
+    prmResult.setStartGoal(start, goal);
+    prmResult.overlayPath(prmPath);
+    prmResult.overlayNodes(prm.getSampledNodes());
+    prmResult.overlayEdges(prm.getEdges());
+    prmResult.saveToImage("img/prm_path.png");
+
     // ----------------------------
     // 5. Auto-open images
     // ----------------------------
@@ -81,6 +98,7 @@ int main(int argc, char* argv[]) {
         system("open img/config_space_final.png");
         system("open img/prm_samples.png");
         system("open img/prm_roadmap.png");
+        system("open img/prm_path.png");
     #elif __linux__
         system("xdg-open img/config_space_final.png");
         system("xdg-open img/prm_samples.png");
