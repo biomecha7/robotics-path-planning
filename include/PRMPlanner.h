@@ -31,6 +31,8 @@ public:
 
     const std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>>& getEdges() const;
 
+    std::vector<std::pair<int, int>> smoothPath(const std::vector<std::pair<int, int>>& path);
+
 private:
     const Grid& grid_;
     int rows_, cols_;

@@ -167,3 +167,31 @@ std::vector<std::pair<int, int>> PRMPlanner::findPath(
     std::reverse(path.begin(), path.end());
     return path;
 }
+
+std::vector<std::pair<int, int>> PRMPlanner::smoothPath(const std::vector<std::pair<int, int>>& path) {
+    if (path.empty()) return {};
+
+    std::vector<std::pair<int, int>> smoothed;
+    size_t i = 0;
+
+    while (i < path.size() - 1) {
+        size_t j = path.size() - 1;
+
+        // Find the farthest j > i such that path[i] to path[j] is collision-free
+        while (j > i + 1 && !isCollisionFree(path[i], path[j])) {
+            --j;
+        }
+
+        // If no shortcut found, move just one step forward
+        if (j == i + 1) {
+            smoothed.push_back(path[i]);
+            ++i;
+        } else {
+            smoothed.push_back(path[i]);
+            i = j;
+        }
+    }
+
+    smoothed.push_back(path.back());
+    return smoothed;
+}

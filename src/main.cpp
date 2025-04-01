@@ -92,13 +92,26 @@ int main(int argc, char* argv[]) {
     prmResult.saveToImage("img/prm_path.png");
 
     // ----------------------------
-    // 5. Auto-open images
+    // 6. PRM Smoothed Path Visualization
+    // ----------------------------
+    auto prmSmoothedPath = prm.smoothPath(prmPath);
+
+    GridVisualizer smoothVisualizer(grid);
+    smoothVisualizer.setStartGoal(start, goal);
+    smoothVisualizer.overlayPath(prmSmoothedPath);
+    smoothVisualizer.overlayNodes(prm.getSampledNodes());
+    smoothVisualizer.overlayEdges(prm.getEdges());
+    smoothVisualizer.saveToImage("img/prm_path_smoothed.png");
+
+    // ----------------------------
+    // 7. Auto-open images
     // ----------------------------
     #ifdef __APPLE__
         system("open img/config_space_final.png");
         system("open img/prm_samples.png");
         system("open img/prm_roadmap.png");
         system("open img/prm_path.png");
+        system("open img/prm_path_smoothed.png");
     #elif __linux__
         system("xdg-open img/config_space_final.png");
         system("xdg-open img/prm_samples.png");
