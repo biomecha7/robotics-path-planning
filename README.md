@@ -249,3 +249,86 @@ private:
 
 ---
 
+Absolutely — here's your formal problem statement, modeled in the same structured and progressive format as before:
+
+---
+
+## 🧭 **Problem 5: Implement a Grid-Based RRT Planner**
+
+### 📍Context
+
+You are developing a motion planning module for a **ground-based autonomous truck** navigating through a 2D grid with static obstacles. The robot is **non-holonomic**, but for the sake of initial implementation, we will relax constraints and assume it can turn instantly and move in any direction (like a point robot).
+
+Later, this planner will evolve to account for turn radius, heading, and full vehicle kinematics.
+
+---
+
+### 🧩 Goal
+
+Implement a **Rapidly-Exploring Random Tree (RRT)** planner that:
+
+1. **Grows a tree** of configurations in free space from the start location
+2. Uses **random sampling** and **nearest-neighbor expansion**
+3. Attempts to connect the tree toward a specified **goal**
+4. **Avoids obstacles** using a **collision checker** over a 2D grid
+5. Produces a valid **path from start to goal**
+6. Visualizes:
+   - The RRT edges (gray lines)
+   - The final path (red line)
+   - Start and goal markers (green/blue)
+
+---
+
+### 📦 Provided Tools
+
+- A `Grid` object from your `CSpaceBuilder` with:
+  - `0 = free`
+  - `1 = obstacle`
+- A `GridVisualizer` that supports:
+  - `.overlayPath(path)`
+  - `.overlayEdges(edges)`
+  - `.saveToImage(filename)`
+
+---
+
+### 🧪 Requirements
+
+- RRT should:
+  - Use random sampling within the grid bounds
+  - Use Euclidean distance to find the nearest node
+  - Expand toward the sampled point using a **fixed step size**
+  - Use **grid-based Bresenham collision checking**
+  - Stop when the goal is reached (or a max number of iterations)
+
+- Code should be modular:
+  - `RRTPlanner.h / RRTPlanner.cpp`
+  - Callable from `main.cpp`
+
+---
+
+### 📈 Extensions (for later)
+
+After the core works:
+- Add **goal biasing** (e.g., 5% of the time sample = goal)
+- Add **angle + turning radius**
+- Add **Dubins or Reeds-Shepp expansion**
+- Optimize path with shortcut smoothing
+
+---
+
+### 🔑 Inputs
+
+- `start = (x, y)`
+- `goal  = (x, y)`
+- `grid` from `CSpaceBuilder`
+
+---
+
+### 🎯 Output
+
+- `std::vector<Point>` path from `start` to `goal`
+- Visualization image (`img/rrt_path.png`) showing:
+  - Tree growth
+  - Final path
+
+---
