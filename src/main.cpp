@@ -7,6 +7,7 @@
 #include "TrajectoryGenerator.h"
 #include "behavior/docking/DockingMission.h"
 #include <thread>
+#include "planner/PlannerInterface.h"
 
 constexpr int GRID_SIZE = 100;
 constexpr double ROBOT_RADIUS = 2.0;
@@ -21,19 +22,6 @@ int main(int argc, char* argv[]) {
     std::pair<int, int> goal  = {std::stoi(argv[3]), std::stoi(argv[4])};
     std::string plannerFlag = argv[5];
 
-    if (plannerFlag == "behavior") {
-    std::unique_ptr<Behavior> mission = std::make_unique<DockingMission>();
-    mission->initialize();
-
-    while (!mission->isComplete()) {
-        mission->update();
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-
-    std::cout << "[Main] Mission '" << mission->name() << "' completed.\n";
-    return 0;
-}
-
     // Build Configuration Space
     CSpaceBuilder cspace(GRID_SIZE, ROBOT_RADIUS);
     cspace.addObstacle({20, 20, 30, 30});
@@ -41,6 +29,20 @@ int main(int argc, char* argv[]) {
     cspace.addObstacle({70, 10, 90, 25});
     cspace.buildConfigurationSpace();
     Grid grid = cspace.getGrid();
+
+    if (plannerFlag == "behavior") {
+       PRMPlanner prm(grid, 500, 10);
+        std::unique_ptr<Behavior> mission = std::make_unique<DockingMission>(grid, prm, start, goal);
+        mission->initialize();
+
+        while (!mission->isComplete()) {
+            mission->update();
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+        std::cout << "[Main] Mission '" << mission->name() << "' completed.\n";
+        return 0;
+    }
 
     bool ranAstar = false, ranPrm = false, ranRrt = false;
 
