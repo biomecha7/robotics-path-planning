@@ -14,7 +14,7 @@ public:
         int parentIdx;
     };
 
-    RRTPlanner(const Grid& grid, int maxIterations = 1000, double stepSize = 5.0);
+    RRTPlanner(const Grid& grid, int maxIterations = 1000, double stepSize = 5.0, double goalBias = 0.05);
 
     std::vector<Point> plan(Point start, Point goal);
 
@@ -25,6 +25,8 @@ private:
     int maxIterations_;
     double stepSize_;
     std::vector<Node> tree_;
+    double goalBias_ = 0.5; // default 5% chance
+    Point goal_;
 
     Point sample();
     int getNearestNodeIndex(const Point& target);

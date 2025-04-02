@@ -5,9 +5,9 @@
 #include <cstdlib>
 #include <iostream>
 
-RRTPlanner::RRTPlanner(const Grid& grid, int maxIterations, double stepSize) 
+RRTPlanner::RRTPlanner(const Grid& grid, int maxIterations, double stepSize, double goalBias) 
     : grid_(grid), rows_(grid.size()), cols_(grid[0].size()),
-      maxIterations_(maxIterations), stepSize_(stepSize)
+      maxIterations_(maxIterations), stepSize_(stepSize), goalBias_(goalBias)
 {
     std::srand(std::time(nullptr));     // seed RNG
 }
@@ -18,6 +18,9 @@ RRTPlanner::RRTPlanner(const Grid& grid, int maxIterations, double stepSize)
  *
  */
 Point RRTPlanner::sample() {
+    if ((std::rand() / static_cast<double>(RAND_MAX)) < goalBias_) {
+        return goal_;
+    }
     int x = std::rand() % cols_;
     int y = std::rand() % rows_;
     return {x, y};
@@ -73,6 +76,7 @@ int RRTPlanner::getNearestNodeIndex(const Point& target) {
  */
 std::vector<Point> RRTPlanner::plan(Point start, Point goal) {
     tree_.clear();
+    goal_ = goal;
     tree_.push_back({start, -1});   // root node has no parent
 
     for (int iter = 0; iter < maxIterations_; ++iter) {
