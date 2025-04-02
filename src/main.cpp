@@ -10,178 +10,144 @@ constexpr int GRID_SIZE = 100;
 constexpr double ROBOT_RADIUS = 2.0;
 
 int main(int argc, char* argv[]) {
-    if (argc != 5) {
-        std::cerr << "Usage: " << argv[0] << " <start_x> <start_y> <goal_x> <goal_y>\n";
+    if (argc != 6) {
+        std::cerr << "Usage: " << argv[0] << " <start_x> <start_y> <goal_x> <goal_y> <planner_flag>\n";
         return 1;
     }
 
     std::pair<int, int> start = {std::stoi(argv[1]), std::stoi(argv[2])};
     std::pair<int, int> goal  = {std::stoi(argv[3]), std::stoi(argv[4])};
+    std::string plannerFlag = argv[5];
 
-    // ----------------------------
-    // 1. Configuration Space
-    // ----------------------------
+    // Build Configuration Space
     CSpaceBuilder cspace(GRID_SIZE, ROBOT_RADIUS);
-
     cspace.addObstacle({20, 20, 30, 30});
     cspace.addObstacle({50, 50, 55, 60});
     cspace.addObstacle({70, 10, 90, 25});
-
     cspace.buildConfigurationSpace();
     Grid grid = cspace.getGrid();
 
-    // ----------------------------
-    // 2. A* Planning + Animation
-    // ----------------------------
-    AStarPlanner planner(grid);
-    auto path = planner.search(start, goal);
+    bool ranAstar = false, ranPrm = false, ranRrt = false;
 
-    if (path.empty()) {
-        std::cout << "A* path not found.\n";
-    } else {
-        std::cout << "A* path found with " << path.size() << " waypoints.\n";
+    if (plannerFlag == "astar" || plannerFlag == "all") {
+        ranAstar = true;
+        AStarPlanner planner(grid);
+        auto path = planner.search(start, goal);
 
-        for (size_t i = 1; i <= path.size(); ++i) {
-            GridVisualizer frameVisualizer(grid);
-            frameVisualizer.setStartGoal(start, goal);
-            frameVisualizer.overlayPath({path.begin(), path.begin() + i});
-            frameVisualizer.saveToImage("img/frame_" + std::to_string(i) + ".png");
+        if (!path.empty()) {
+            for (size_t i = 1; i <= path.size(); ++i) {
+                GridVisualizer frameVisualizer(grid);
+                frameVisualizer.setStartGoal(start, goal);
+                frameVisualizer.overlayPath({path.begin(), path.begin() + i});
+                frameVisualizer.saveToImage("img/frame_" + std::to_string(i) + ".png");
+            }
+            GridVisualizer finalVisualizer(grid);
+            finalVisualizer.setStartGoal(start, goal);
+            finalVisualizer.overlayPath(path);
+            finalVisualizer.saveToImage("img/config_space_final.png");
         }
-
-        GridVisualizer finalVisualizer(grid);
-        finalVisualizer.setStartGoal(start, goal);
-        finalVisualizer.overlayPath(path);
-        finalVisualizer.saveToImage("img/config_space_final.png");
     }
 
-    // ----------------------------
-    // 3. PRM Sampling Visualization
-    // ----------------------------
-    PRMPlanner prm(grid, 500, 10);  // Reduced K=10 to prevent over-connecting
-    prm.sampleFreePoints();
+    if (plannerFlag == "prm" || plannerFlag == "all") {
+        ranPrm = true;
+        PRMPlanner prm(grid, 500, 10);
+        prm.sampleFreePoints();
+        prm.buildRoadmap();
 
-    GridVisualizer sampleVisualizer(grid);
-    sampleVisualizer.setStartGoal(start, goal);
-    sampleVisualizer.overlayNodes(prm.getSampledNodes());
-    sampleVisualizer.saveToImage("img/prm_samples.png");
+        auto prmPath = prm.findPath(start, goal);
 
-    // ----------------------------
-    // 4. PRM Roadmap Visualization
-    // ----------------------------
-    prm.buildRoadmap();
+        GridVisualizer sampleVisualizer(grid);
+        sampleVisualizer.setStartGoal(start, goal);
+        sampleVisualizer.overlayNodes(prm.getSampledNodes());
+        sampleVisualizer.saveToImage("img/prm_samples.png");
 
-    GridVisualizer roadmapVisualizer(grid);
-    roadmapVisualizer.setStartGoal(start, goal);
-    roadmapVisualizer.overlayNodes(prm.getSampledNodes());
-    roadmapVisualizer.overlayEdges(prm.getEdges());
-    roadmapVisualizer.saveToImage("img/prm_roadmap.png");
+        GridVisualizer roadmapVisualizer(grid);
+        roadmapVisualizer.setStartGoal(start, goal);
+        roadmapVisualizer.overlayNodes(prm.getSampledNodes());
+        roadmapVisualizer.overlayEdges(prm.getEdges());
+        roadmapVisualizer.saveToImage("img/prm_roadmap.png");
 
-    // ---------------------------
-    // 5. PRM Final Path Visualization
-    // ---------------------------
-    auto prmPath = prm.findPath(start, goal);
-    if (prmPath.empty()) {
-        std::cout << "PRM path NOT found.\n";
-    } else {
-        std::cout << "PRM path FOUND with " << prmPath.size() << " steps.\n";
+        GridVisualizer prmResult(grid);
+        prmResult.setStartGoal(start, goal);
+        prmResult.overlayPath(prmPath);
+        prmResult.overlayNodes(prm.getSampledNodes());
+        prmResult.overlayEdges(prm.getEdges());
+        prmResult.saveToImage("img/prm_path.png");
+
+        auto prmSmoothedPath = prm.smoothPath(prmPath);
+        GridVisualizer smoothVisualizer(grid);
+        smoothVisualizer.setStartGoal(start, goal);
+        smoothVisualizer.overlayPath(prmSmoothedPath);
+        smoothVisualizer.overlayNodes(prm.getSampledNodes());
+        smoothVisualizer.overlayEdges(prm.getEdges());
+        smoothVisualizer.saveToImage("img/prm_path_smoothed.png");
+
+        if (!prmPath.empty()) {
+            std::vector<TrajectoryGenerator::Point> prmPointPath;
+            for (const auto& [x, y] : prmPath) {
+                prmPointPath.emplace_back(static_cast<double>(x), static_cast<double>(y), 0.0);
+            }
+            auto timedPath = TrajectoryGenerator::applyTimeProfile(prmPointPath, 1.0);
+            auto splinePath = TrajectoryGenerator::generateCatmullRomSpline(timedPath, 10);
+
+            GridVisualizer visualizer(grid);
+            visualizer.setStartGoal(start, goal);
+            std::vector<std::pair<int, int>> roundedSplinePath;
+            for (const auto& [x, y, t] : splinePath) {
+                roundedSplinePath.emplace_back(static_cast<int>(std::round(x)), static_cast<int>(std::round(y)));
+            }
+            visualizer.overlayPath(roundedSplinePath);
+            visualizer.overlayNodes(prm.getSampledNodes());
+            visualizer.overlayEdges(prm.getEdges());
+            visualizer.saveToImage("img/prm_smoothed_trajectory.png");
+        }
     }
 
-    GridVisualizer prmResult(grid);
-    prmResult.setStartGoal(start, goal);
-    prmResult.overlayPath(prmPath);
-    prmResult.overlayNodes(prm.getSampledNodes());
-    prmResult.overlayEdges(prm.getEdges());
-    prmResult.saveToImage("img/prm_path.png");
+    if (plannerFlag == "rrt" || plannerFlag == "all") {
+        ranRrt = true;
+        RRTPlanner rrt(grid, 2000, 7.0);
+        auto rrtPath = rrt.plan(start, goal);
+        GridVisualizer rrtVisualizer(grid);
+        rrtVisualizer.setStartGoal(start, goal);
+        rrtVisualizer.overlayPath(rrtPath);
 
-    // ----------------------------
-    // 6. PRM Smoothed Path Visualization
-    // ----------------------------
-    auto prmSmoothedPath = prm.smoothPath(prmPath);
-
-    GridVisualizer smoothVisualizer(grid);
-    smoothVisualizer.setStartGoal(start, goal);
-    smoothVisualizer.overlayPath(prmSmoothedPath);
-    smoothVisualizer.overlayNodes(prm.getSampledNodes());
-    smoothVisualizer.overlayEdges(prm.getEdges());
-    smoothVisualizer.saveToImage("img/prm_path_smoothed.png");
-
-    // ----------------------------
-    // 7. Apply Catmull-Rom Spline
-    // ----------------------------
-    if (prmPath.empty()) {
-        std::cout << "PRM path not found.\n";
-        return 0;
+        std::vector<std::pair<Point, Point>> rrtEdges;
+        const auto& tree = rrt.getTree();
+        for (size_t i = 1; i < tree.size(); ++i) {
+            rrtEdges.emplace_back(tree[i].pos, tree[tree[i].parentIdx].pos);
+        }
+        rrtVisualizer.overlayEdges(rrtEdges);
+        rrtVisualizer.saveToImage("img/rrt_path.png");
     }
 
-    std::vector<TrajectoryGenerator::Point> prmPointPath;
-    for (const auto& [x, y] : prmPath) {
-        prmPointPath.emplace_back(static_cast<double>(x), static_cast<double>(y), 0.0);
-    }
-
-    auto timedPath = TrajectoryGenerator::applyTimeProfile(prmPointPath, 1.0);
-    auto splinePath = TrajectoryGenerator::generateCatmullRomSpline(timedPath, 10);
-
-    GridVisualizer visualizer(grid);
-    visualizer.setStartGoal(start, goal);
-
-    std::vector<std::pair<int, int>> roundedSplinePath;
-    for (const auto& [x, y, t] : splinePath) {
-        roundedSplinePath.emplace_back(static_cast<int>(std::round(x)), static_cast<int>(std::round(y)));
-    }
-
-    visualizer.overlayPath(roundedSplinePath);
-    visualizer.overlayNodes(prm.getSampledNodes());
-    visualizer.overlayEdges(prm.getEdges());
-    visualizer.saveToImage("img/prm_smoothed_trajectory.png");
-
-    // ----------------------------
-    // 8. RRT Path Planning 
-    // ----------------------------
-    RRTPlanner rrt(grid, 2000, 7.0);
-    auto rrtPath = rrt.plan(start, goal);
-    std::cout << "RRT tree size: " << rrt.getTree().size() << '\n';
-
-    if (rrtPath.empty()) {
-        std::cout << "RRT path not found.\n";
-    } else {
-        std::cout << "RRT path found with " << rrtPath.size() << " steps.\n";
-    }
-
-    // Visualization
-    GridVisualizer rrtVisualizer(grid);
-    rrtVisualizer.setStartGoal(start, goal);
-    rrtVisualizer.overlayPath(rrtPath);
-
-    // Add tree edges to visualizer
-    std::vector<std::pair<Point, Point>> rrtEdges;
-    const auto& tree = rrt.getTree();
-    for (size_t i = 1; i < tree.size(); ++i) {
-        rrtEdges.emplace_back(tree[i].pos, tree[tree[i].parentIdx].pos);
-    }
-
-    rrtVisualizer.overlayEdges(rrtEdges);
-
-    rrtVisualizer.saveToImage("img/rrt_path.png");
-
-    // ----------------------------
-    // 9. Auto-open images
-    // ----------------------------
+    // Auto open images
     #ifdef __APPLE__
-        system("open img/config_space_final.png");
-        system("open img/prm_samples.png");
-        system("open img/prm_roadmap.png");
-        system("open img/prm_path.png");
-        system("open img/prm_path_smoothed.png");
-        system("open img/prm_smoothed_trajectory.png");
-        system("open img/rrt_path.png");
+        if (ranAstar) system("open img/config_space_final.png");
+        if (ranPrm) {
+            system("open img/prm_samples.png");
+            system("open img/prm_roadmap.png");
+            system("open img/prm_path.png");
+            system("open img/prm_path_smoothed.png");
+            system("open img/prm_smoothed_trajectory.png");
+        }
+        if (ranRrt) system("open img/rrt_path.png");
     #elif __linux__
-        system("xdg-open img/config_space_final.png");
-        system("xdg-open img/prm_samples.png");
-        system("xdg-open img/prm_roadmap.png");
+        if (ranAstar) system("xdg-open img/config_space_final.png");
+        if (ranPrm) {
+            system("xdg-open img/prm_samples.png");
+            system("xdg-open img/prm_roadmap.png");
+        }
+        if (ranRrt) system("xdg-open img/rrt_path.png");
     #elif _WIN32
-        system("start img\\config_space_final.png");
-        system("start img\\prm_samples.png");
-        system("start img\\prm_roadmap.png");
+        if (ranAstar) system("start img\\config_space_final.png");
+        if (ranPrm) {
+            system("start img\\prm_samples.png");
+            system("start img\\prm_roadmap.png");
+            system("start img\\prm_path.png");
+            system("start img\\prm_path_smoothed.png");
+            system("start img\\prm_smoothed_trajectory.png");
+        }
+        if (ranRrt) system("start img\\rrt_path.png");
     #endif
 
     return 0;
