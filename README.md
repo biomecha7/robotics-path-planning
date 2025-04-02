@@ -332,3 +332,53 @@ After the core works:
   - Final path
 
 ---
+
+Awesome! Here's the next formal RRT-based problem to deepen your understanding and bring the algorithm closer to practical deployment.
+
+---
+
+### ✅ **Problem 6: RRT with Goal Bias (RRT-Connect Stage 1)**
+
+#### 🎯 **Objective**
+Improve the efficiency of the basic RRT planner by introducing **goal biasing**: with a certain probability, steer the tree toward the goal rather than a random sample. This change drastically improves success rate and speed of convergence.
+
+---
+
+### 📋 **Problem Statement**
+
+**Implement goal biasing in your RRT planner**. Currently, the planner randomly samples the environment. Instead, we will add a goal bias:
+
+> With probability `goalBias` (e.g., 5% or 0.05), sample the goal point directly.
+
+### 🔧 Requirements
+
+1. Add a `goalBias_` field to your `RRTPlanner` class.
+2. Update the `sample()` function to return:
+   - the `goal` point with `goalBias_` probability.
+   - a random point otherwise.
+3. Modify `plan(start, goal)` to:
+   - Pass the `goal` point to `sample()` when needed.
+   - Retain all existing functionality, including collision checking, nearest node, steering, etc.
+
+---
+
+### 📦 Inputs
+- `start`: The starting coordinate (x, y).
+- `goal`: The goal coordinate (x, y).
+- `goalBias_`: A `double` in range [0.0, 1.0].
+
+---
+
+### ✅ Outputs
+- A planned path from start to goal using RRT with goal biasing.
+- A visualization showing:
+  - The expanded RRT tree.
+  - The path if found.
+
+---
+
+### 🧠 Conceptual Benefit
+
+In real-world robotics, uninformed random sampling often wastes computation. Goal biasing nudges the tree in the direction of progress, improving success in environments with narrow passages or when time is constrained.
+
+---
