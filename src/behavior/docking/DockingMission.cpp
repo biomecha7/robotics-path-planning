@@ -1,9 +1,15 @@
 #include "behavior/docking/DockingMission.h"
+#include "GridVisualizer.h"
 #include <iostream>
 #include <thread>
 #include <chrono>
 
-DockingMission::DockingMission() : currentState(State::Idle) {}
+DockingMission::DockingMission(
+    Grid& grid,
+    PlannerInterface& planner,
+    const std::pair<int, int>& start,
+    const std::pair<int, int>& goal
+) : currentState(State::Idle), grid(grid), planner(planner), start(start), goal(goal) {}
 
 void DockingMission::initialize() {
     std::cout << "[DockingMission] Initializing..." << std::endl;
@@ -20,7 +26,7 @@ void DockingMission::update() {
 
         case State::Approach:
             std::cout << "[State] Planning approach path..." << std::endl;
-            simulatePlannerCall();
+            runPlanner();
             transitionTo(State::Align);
             break;
 
@@ -57,11 +63,21 @@ void DockingMission::transitionTo(State next) {
     currentState = next;
 }
 
-void DockingMission::simulatePlannerCall() {
+void DockingMission::runPlanner() {
     if (!pathPlanned) {
-        std::cout << "[Planner] Calling Planner..." << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(400));
+        std::cout << "[Planner] Initializing...\n";
+        planner.initialize();
+
+        path = planner.plan(start, goal);
+        if (path.empty()) {
+            std::cerr << "[Planner] Failed to find a path!\n";
+        } else {
+            std::cout << "[Planner] Path found with " <<path.size() << "waypoints.\n";
+            GridVisualizer viz(grid);
+            viz.setStartGoal(start, goal);
+            viz.overlayPath(path);
+            viz.saveToImage("img/docking_path.png");
+        }
         pathPlanned = true;
-        std::cout << "[Planner] Path found." << std::endl;
     }
 }
