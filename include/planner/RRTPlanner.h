@@ -1,13 +1,11 @@
-#pragma once 
+#pragma once
 
 #include <vector>
 #include <utility>
-#include <unordered_map>
+#include "planner/PlannerInterface.h"
+#include "core/GridTypes.h"
 
-using Grid = std::vector<std::vector<int>>;
-using Point = std::pair<int, int>;
-
-class RRTPlanner {
+class RRTPlanner : public PlannerInterface {
 public:
     struct Node {
         Point pos;
@@ -16,16 +14,18 @@ public:
 
     RRTPlanner(const Grid& grid, int maxIterations = 1000, double stepSize = 5.0, double goalBias = 0.05);
 
-    std::vector<Point> plan(Point start, Point goal);
+    void initialize() override;
+    std::vector<Point> plan(const Point& start, const Point& goal) override;
 
-    const std::vector<RRTPlanner::Node>& getTree() const { return tree_; }
+    const std::vector<Node>& getTree() const;
+
 private:
     Grid grid_;
     int rows_, cols_;
     int maxIterations_;
     double stepSize_;
+    double goalBias_;
     std::vector<Node> tree_;
-    double goalBias_ = 0.5; // default 5% chance
     Point goal_;
 
     Point sample();
