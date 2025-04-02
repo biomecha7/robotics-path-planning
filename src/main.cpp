@@ -1,10 +1,10 @@
 #include <iostream>
 #include "CSpaceBuilder.h"
-#include "AStarPlanner.h"
-#include "PRMPlanner.h"
+#include "planner/AStarPlanner.h"
+#include "planner/PRMPlanner.h"
+#include "planner/RRTPlanner.h"
 #include "GridVisualizer.h"
 #include "TrajectoryGenerator.h"
-#include "RRTPlanner.h"
 
 constexpr int GRID_SIZE = 100;
 constexpr double ROBOT_RADIUS = 2.0;

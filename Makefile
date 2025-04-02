@@ -11,8 +11,8 @@ BUILD_DIR = build
 TARGET = $(BUILD_DIR)/main
 
 # Source and object files
-SRCS = $(wildcard $(SRC_DIR)/*.cpp)
-OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRCS))
+SRCS = $(shell find $(SRC_DIR) -name '*.cpp')
+OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
 
 # Default target
 all: prepare $(TARGET)
@@ -23,6 +23,7 @@ $(TARGET): $(OBJS)
 
 # Compile .cpp files into .o object files
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Ensure build & image directory exists

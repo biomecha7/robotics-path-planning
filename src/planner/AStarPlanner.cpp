@@ -1,6 +1,6 @@
 // File: AStarPlanner.cpp
 
-#include "AStarPlanner.h"
+#include "planner/AStarPlanner.h"
 
 double AStarPlanner::heuristic(int x1, int y1, int x2, int y2) const {
     return std::sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));

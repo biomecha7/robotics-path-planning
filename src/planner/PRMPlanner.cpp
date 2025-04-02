@@ -1,4 +1,4 @@
-#include "PRMPlanner.h"
+#include "planner/PRMPlanner.h"
 #include <cstdlib>
 #include <ctime>
 #include <random>
