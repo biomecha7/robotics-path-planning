@@ -5,7 +5,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
-using Grid = std::vector<std::vector<int>>;
+#include "planner/PlannerInterface.h"
+#include "core/GridTypes.h"
 
 // Hash function for pair<int, int> keys
 struct pair_hash {
@@ -14,7 +15,7 @@ struct pair_hash {
     }
 };
 
-class PRMPlanner {
+class PRMPlanner : public PlannerInterface {
 public:
     PRMPlanner(const Grid& grid, int numSamples, int numNeighbors);
 
@@ -32,6 +33,17 @@ public:
     const std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>>& getEdges() const;
 
     std::vector<std::pair<int, int>> smoothPath(const std::vector<std::pair<int, int>>& path);
+
+    void initialize() override {
+        sampleFreePoints();
+        buildRoadmap();
+    }
+
+    std::vector<std::pair<int, int>> plan(
+        const std::pair<int, int>& start,
+        const std::pair<int, int>& goal) override {
+        return findPath(start, goal);
+    }
 
 private:
     const Grid& grid_;
