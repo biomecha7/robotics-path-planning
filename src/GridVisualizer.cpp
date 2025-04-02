@@ -25,20 +25,18 @@ void GridVisualizer::saveToImage(const std::string& filename) {
             cv::Rect cell(x * cellSize, y * cellSize, cellSize, cellSize);
             if (grid_[y][x] == 1) {
                 cv::rectangle(image_, cell, cv::Scalar(0, 0, 0), cv::FILLED);  // Obstacle = black
-            }
-
-            if (grid_[y][x] == 2) {
+            } else if (grid_[y][x] == 2) {
                 cv::rectangle(image_, cell, cv::Scalar(0, 0, 255), cv::FILLED);  // Path = red
             }
         }
     }
 
-        if (hasStartGoal_) {
-        // Draw start = green
+    if (hasStartGoal_) {
+        // Start = green
         cv::circle(image_,
             cv::Point(start_.first * cellSize + cellSize / 2, start_.second * cellSize + cellSize / 2),
             cellSize, cv::Scalar(0, 255, 0), cv::FILLED);
-        // Draw goal = blue
+        // Goal = blue
         cv::circle(image_,
             cv::Point(goal_.first * cellSize + cellSize / 2, goal_.second * cellSize + cellSize / 2),
             cellSize, cv::Scalar(255, 0, 0), cv::FILLED);
@@ -46,27 +44,41 @@ void GridVisualizer::saveToImage(const std::string& filename) {
 
     overlayEdges(edges_);
 
-    // 2. Overlay the path on top of everything
     for (const auto& [x, y] : path_) {
-        cv::circle(
-            image_,
+        cv::circle(image_,
             cv::Point(x * cellSize + cellSize / 2, y * cellSize + cellSize / 2),
-            1, cv::Scalar(0, 0, 255), cv::FILLED
-        );
+            1, cv::Scalar(0, 0, 255), cv::FILLED);
     }
 
     for (size_t i = 1; i < path_.size(); ++i) {
         const auto& [x1, y1] = path_[i - 1];
         const auto& [x2, y2] = path_[i];
-        cv::line(
-            image_,
+        cv::line(image_,
             cv::Point(x1 * cellSize + cellSize / 2, y1 * cellSize + cellSize / 2),
             cv::Point(x2 * cellSize + cellSize / 2, y2 * cellSize + cellSize / 2),
-            cv::Scalar(0, 0, 255), 2
-        );
+            cv::Scalar(0, 0, 255), 2);
     }
 
+    // Save image
     cv::imwrite(filename, image_);
+
+    // Open image automatically
+#ifdef __APPLE__
+    std::string command = "open " + filename;
+#elif __linux__
+    std::string command = "xdg-open " + filename;
+#elif _WIN32
+    std::string command = "start " + filename;
+#endif
+
+#ifdef _WIN32
+    system(command.c_str());
+#else
+    int ret = std::system(command.c_str());
+    if (ret != 0) {
+        std::cerr << "Failed to open image: " << filename << std::endl;
+    }
+#endif
 }
 
 void GridVisualizer::overlayNodes(const std::vector<std::pair<int, int>>& nodes) {
