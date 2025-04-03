@@ -1,6 +1,12 @@
 // File: AStarPlanner.cpp
-
 #include "planner/AStarPlanner.h"
+
+AStarPlanner::AStarPlanner(const Grid& grid)
+    : grid_(grid), rows_(grid.size()), cols_(grid[0].size()) {}
+
+void AStarPlanner::initialize() {
+    // No preprocessing needed for A*
+}
 
 double AStarPlanner::heuristic(int x1, int y1, int x2, int y2) const {
     return std::sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
@@ -17,14 +23,14 @@ std::vector<std::pair<int, int>> AStarPlanner::reconstructPath(
         current = cameFrom[key];
         key = current.first * cols_ + current.second;
     }
-    path.push_back(current);    // start node
+    path.push_back(current);
     std::reverse(path.begin(), path.end());
     return path;
 }
 
-std::vector<std::pair<int, int>> AStarPlanner::search(
-    std::pair<int, int> start,
-    std::pair<int, int> goal
+std::vector<std::pair<int, int>> AStarPlanner::plan(
+    const std::pair<int, int>& start,
+    const std::pair<int, int>& goal
 ) {
     std::priority_queue<Node, std::vector<Node>, std::greater<Node>> openSet;
     openSet.push({start.first, start.second, 0.0, heuristic(start.first, start.second, goal.first, goal.second)});
@@ -51,14 +57,14 @@ std::vector<std::pair<int, int>> AStarPlanner::search(
             int ny = current.y + dy;
 
             if (nx < 0 || ny < 0 || nx >= cols_ || ny >= rows_) continue;
-            if (grid_[ny][nx] == 1) continue;   // obstacle
+            if (grid_[ny][nx] == 1) continue;   // Obstacle
 
             double stepCost = std::hypot(dx, dy);
             double newCost = costSoFar[current.x * cols_ + current.y] + stepCost;
             int key = nx * cols_ + ny;
 
             if (costSoFar.find(key) == costSoFar.end() || newCost < costSoFar[key]) {
-                costSoFar[key] = newCost; 
+                costSoFar[key] = newCost;
                 double priority = newCost + heuristic(nx, ny, goal.first, goal.second);
                 openSet.push({nx, ny, newCost, priority});
                 cameFrom[key] = {current.x, current.y};
@@ -66,5 +72,5 @@ std::vector<std::pair<int, int>> AStarPlanner::search(
         }
     }
 
-    return {}; // No path found 
+    return {}; // No path found
 }

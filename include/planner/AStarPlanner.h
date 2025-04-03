@@ -6,18 +6,21 @@
 #include <unordered_map>
 #include <cmath>
 #include <utility>
+#include <algorithm>
+#include "planner/PlannerInterface.h"
+#include "core/GridTypes.h"
 
-using Grid = std::vector<std::vector<int>>;
-
-class AStarPlanner {
+class AStarPlanner : public PlannerInterface {
 public:
-    AStarPlanner(const Grid& grid)
-        : grid_(grid), rows_(grid.size()), cols_(grid[0].size()) {}
+    AStarPlanner(const Grid& grid);
 
-    std::vector<std::pair<int, int>> search(
-        std::pair<int, int> start,
-        std::pair<int, int> goal
-    );
+    void initialize() override;
+
+    std::vector<std::pair<int, int>> plan(
+        const std::pair<int, int>& start,
+        const std::pair<int, int>& goal
+    ) override;
+
 private:
     struct Node {
         int x, y;
