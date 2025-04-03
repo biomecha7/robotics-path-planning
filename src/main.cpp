@@ -8,6 +8,10 @@
 #include "behavior/docking/DockingMission.h"
 #include <thread>
 #include "planner/PlannerInterface.h"
+#include "perception/PerceptionLayer.h"
+#include "perception/GridConversion.h"
+
+using namespace perception;
 
 constexpr int GRID_SIZE = 100;
 constexpr double ROBOT_RADIUS = 2.0;
@@ -25,6 +29,25 @@ std::unique_ptr<PlannerInterface> createPlanner(const std::string& flag, const G
     }
 }
 
+void testPerceptionAndVisualization() {
+    using namespace perception;
+
+    PerceptionLayer perception(100, 100, 0.1);
+
+    // Add some test obstacles
+    for (int i = 40; i <= 60; ++i) {
+        perception.addObstacle(i, 50); // Horizontal wall
+    }
+    perception.update();
+
+    // Convert to int grid
+    Grid grid = convertToIntGrid(perception.getGrid());
+
+    // Visualize
+    GridVisualizer viz(grid);
+    viz.saveToImage("img/perception_output.png");
+}
+
 int main(int argc, char* argv[]) {
     if (argc != 6) {
         std::cerr << "Usage: " << argv[0] << " <start_x> <start_y> <goal_x> <goal_y> <planner_flag>\n";
@@ -40,9 +63,12 @@ int main(int argc, char* argv[]) {
     cspace.addObstacle({20, 20, 30, 30});
     cspace.addObstacle({50, 50, 55, 60});
     cspace.addObstacle({70, 10, 90, 25});
+    cspace.addObstacle({20, 5, 30, 45});
+    cspace.addObstacle({30, 85, 80, 85});
     cspace.buildConfigurationSpace();
     Grid grid = cspace.getGrid();
 
+    testPerceptionAndVisualization();
 
     // Mission: Docking
     auto planner = createPlanner(plannerFlag, grid);
