@@ -10,8 +10,10 @@
 #include "planner/PlannerInterface.h"
 #include "perception/PerceptionLayer.h"
 #include "perception/GridConversion.h"
+#include "local_planner/SimpleLocalPlanner.h"
 
 using namespace perception;
+using namespace local_planner;
 
 constexpr int GRID_SIZE = 100;
 constexpr double ROBOT_RADIUS = 2.0;
@@ -48,6 +50,37 @@ void testPerceptionAndVisualization() {
     viz.saveToImage("img/perception_output.png");
 }
 
+void testLocalPlanner() {
+    // Create a clean, empty grid
+    Grid grid(100, std::vector<int>(100, 0));
+
+    // Global path planner
+    PRMPlanner prm(grid, 200, 10);
+    std::pair<int, int> start = {10, 10};
+    std::pair<int, int> goal  = {90, 90};
+    auto path = prm.plan(start, goal);
+
+    // Set up perception
+    PerceptionLayer perception(100, 100, 0.1);
+    for (int x = 30; x <= 70; ++x) {
+        perception.addObstacle(x, 50); // horizontal wall
+    }
+    perception.update();
+
+    // Local planner
+    SimpleLocalPlanner localPlanner(perception, 10);
+    localPlanner.setGlobalPath(path);
+    auto result = localPlanner.plan(start.first, start.second);
+
+    // Visualize
+    Grid gridForViz = convertToIntGrid(perception.getGrid());
+    GridVisualizer viz(gridForViz);
+    viz.setStartGoal(start, goal);
+    viz.overlayPath(path);               // full global path
+    viz.overlayPath(result.localPath);   // local path segment
+    viz.saveToImage("img/local_planner_output.png");
+}
+
 int main(int argc, char* argv[]) {
     if (argc != 6) {
         std::cerr << "Usage: " << argv[0] << " <start_x> <start_y> <goal_x> <goal_y> <planner_flag>\n";
@@ -69,6 +102,7 @@ int main(int argc, char* argv[]) {
     Grid grid = cspace.getGrid();
 
     testPerceptionAndVisualization();
+    testLocalPlanner();
 
     // Mission: Docking
     auto planner = createPlanner(plannerFlag, grid);
