@@ -1,4 +1,4 @@
-#include "TrajectoryGenerator.h"
+#include "trajectory/TrajectoryGenerator.h"
 #include <tuple>
 #include <cmath>
 

@@ -1,6 +1,6 @@
 #pragma once 
 #include "perception/OccupancyGrid2D.h"
-#include "GridVisualizer.h" // for Grid alias
+#include "simulation/GridVisualizer.h" // for Grid alias
 
 namespace perception {
 

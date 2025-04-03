@@ -1,10 +1,10 @@
 #include <iostream>
-#include "CSpaceBuilder.h"
+#include "core/CSpaceBuilder.h"
 #include "planner/AStarPlanner.h"
 #include "planner/PRMPlanner.h"
 #include "planner/RRTPlanner.h"
-#include "GridVisualizer.h"
-#include "TrajectoryGenerator.h"
+#include "simulation/GridVisualizer.h"
+#include "trajectory/TrajectoryGenerator.h"
 #include "behavior/docking/DockingMission.h"
 #include <thread>
 #include "planner/PlannerInterface.h"

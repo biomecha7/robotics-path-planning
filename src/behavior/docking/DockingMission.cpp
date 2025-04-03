@@ -1,5 +1,5 @@
 #include "behavior/docking/DockingMission.h"
-#include "GridVisualizer.h"
+#include "simulation/GridVisualizer.h"
 #include <iostream>
 #include <thread>
 #include <chrono>

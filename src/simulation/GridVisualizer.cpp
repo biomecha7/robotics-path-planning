@@ -1,4 +1,4 @@
-#include "GridVisualizer.h"
+#include "simulation/GridVisualizer.h"
 #include <opencv2/opencv.hpp>
 
 GridVisualizer::GridVisualizer(Grid grid) : grid_(std::move(grid)) {}

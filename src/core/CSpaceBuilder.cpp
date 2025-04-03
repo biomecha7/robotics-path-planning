@@ -1,4 +1,4 @@
-#include "CSpaceBuilder.h"
+#include "core/CSpaceBuilder.h"
 #include <iostream>
 #include <cmath>
 #include <algorithm>
